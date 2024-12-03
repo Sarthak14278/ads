@@ -1,8 +1,6 @@
-//Random_Quicksort
-
+//Random Quicksort
 #include <iostream>
 #include <cstdlib>
-#include <ctime>
 using namespace std;
 
 int comparisons = 0; 
@@ -14,22 +12,36 @@ void swap(int* a, int* b) {
 }
 
 int partition(int arr[], int low, int high) {
-    int pivot = arr[high];
-    int i = (low - 1);
+    int pivot = arr[low]; // Use the first element as the pivot
+    int start = low;
+    int end = high;
 
-    for (int j = low; j <= high - 1; j++) {
-        comparisons++; 
-        if (arr[j] <= pivot) {
-            i++;
-            swap(&arr[i], &arr[j]);
+    while (start < end) {
+        // Increment start while arr[start] <= pivot
+        while (arr[start] <= pivot && start < high) {
+            comparisons++;
+            start++;
+        }
+
+        // Decrement end while arr[end] > pivot
+        while (arr[end] > pivot && end > low) {
+            comparisons++;
+            end--;
+        }
+
+        // Swap elements if start < end
+        if (start < end) {
+            swap(&arr[start], &arr[end]);
         }
     }
-    swap(&arr[i + 1], &arr[high]);
-    return (i + 1);
+
+    // Swap the pivot with arr[end]
+    swap(&arr[low], &arr[end]);
+    return end; // Return the pivot's final position
 }
 
+
 int partition_r(int arr[], int low, int high) {
-    srand(time(NULL));
     int random = low + rand() % (high - low + 1); 
     swap(&arr[random], &arr[high]);
     return partition(arr, low, high);
@@ -513,293 +525,191 @@ int main() {
 
     return 0;
 }
-
-//Tree
+//Treeeeee search insert
 #include <iostream>
 using namespace std;
 
-// A B-Tree Node
-class BTreeNode {
+// Class to represent a node in the binary search tree
+class TreeNode {
 public:
-    int* keys;          // Array of keys
-    int t;              // Minimum degree
-    BTreeNode** C;      // Array of child pointers
-    int n;              // Current number of keys
-    bool leaf;          // True if node is a leaf
+    int data;
+    TreeNode* left;
+    TreeNode* right;
 
-    BTreeNode(int _t, bool _leaf);
-
-    void traverse();
-
-    BTreeNode* search(int k);
-
-    void insertNonFull(int k);
-
-    void splitChild(int i, BTreeNode* y);
-
-    friend class BTree;
+    TreeNode(int value) : data(value), left(NULL), right(NULL) {}
 };
 
-class BTree {
-public:
-    BTreeNode* root; // Pointer to root node
-    int t;           // Minimum degree
+// Class to implement the binary search tree
+class BinarySearchTree {
+private:
+    TreeNode* root;
 
-    BTree(int _t) {
-        root = nullptr;
-        t = _t;
+    // Helper function to insert a value into the tree
+    TreeNode* insertNode(TreeNode* node, int value) {
+        if (node == NULL) {
+            return new TreeNode(value);
+        }
+        if (value < node->data) {
+            node->left = insertNode(node->left, value);
+        } else if (value > node->data) {
+            node->right = insertNode(node->right, value);
+        }
+        return node;
     }
 
-    void traverse() {
-        if (root != nullptr)
-            root->traverse();
-    }
-
-    BTreeNode* search(int k) {
-        return (root == nullptr) ? nullptr : root->search(k);
-    }
-
-    void insert(int k);
-};
-
-// Constructor for BTreeNode
-BTreeNode::BTreeNode(int _t, bool _leaf) {
-    t = _t;
-    leaf = _leaf;
-    keys = new int[2 * t - 1];
-    C = new BTreeNode*[2 * t];
-    n = 0;
-}
-
-// Traverse all nodes in a subtree rooted at this node
-void BTreeNode::traverse() {
-    int i;
-    for (i = 0; i < n; i++) {
-        if (!leaf)
-            C[i]->traverse();
-        cout << " " << keys[i];
-    }
-    if (!leaf)
-        C[i]->traverse();
-}
-
-// Search a key in the subtree rooted at this node
-BTreeNode* BTreeNode::search(int k) {
-    int i = 0;
-    while (i < n && k > keys[i])
-        i++;
-
-    if (keys[i] == k)
-        return this;
-
-    if (leaf)
-        return nullptr;
-
-    return C[i]->search(k);
-}
-
-// Insert a key into the B-Tree
-void BTree::insert(int k) {
-    if (root == nullptr) {
-        root = new BTreeNode(t, true);
-        root->keys[0] = k;
-        root->n = 1;
-    } else {
-        if (root->n == 2 * t - 1) {
-            BTreeNode* s = new BTreeNode(t, false);
-            s->C[0] = root;
-            s->splitChild(0, root);
-
-            int i = 0;
-            if (s->keys[0] < k)
-                i++;
-            s->C[i]->insertNonFull(k);
-
-            root = s;
+    // Helper function to search for a value in the tree
+    bool searchNode(TreeNode* node, int value) {
+        if (node == NULL) {
+            return false;
+        }
+        if (node->data == value) {
+            return true;
+        }
+        if (value < node->data) {
+            return searchNode(node->left, value);
         } else {
-            root->insertNonFull(k);
+            return searchNode(node->right, value);
         }
     }
-}
 
-// Insert a key into a non-full node
-void BTreeNode::insertNonFull(int k) {
-    int i = n - 1;
-
-    if (leaf) {
-        while (i >= 0 && keys[i] > k) {
-            keys[i + 1] = keys[i];
-            i--;
+    // Helper function for in-order traversal
+    void inOrder(TreeNode* node) {
+        if (node != NULL) {
+            inOrder(node->left);
+            cout << node->data << " ";
+            inOrder(node->right);
         }
-
-        keys[i + 1] = k;
-        n++;
-    } else {
-        while (i >= 0 && keys[i] > k)
-            i--;
-
-        if (C[i + 1]->n == 2 * t - 1) {
-            splitChild(i + 1, C[i + 1]);
-
-            if (keys[i + 1] < k)
-                i++;
-        }
-        C[i + 1]->insertNonFull(k);
-    }
-}
-
-// Split the child y of this node
-void BTreeNode::splitChild(int i, BTreeNode* y) {
-    BTreeNode* z = new BTreeNode(y->t, y->leaf);
-    z->n = t - 1;
-
-    for (int j = 0; j < t - 1; j++)
-        z->keys[j] = y->keys[j + t];
-
-    if (!y->leaf) {
-        for (int j = 0; j < t; j++)
-            z->C[j] = y->C[j + t];
     }
 
-    y->n = t - 1;
+public:
+    // Constructor
+    BinarySearchTree() : root(NULL) {}
 
-    for (int j = n; j >= i + 1; j--)
-        C[j + 1] = C[j];
+    // Method to insert a value into the tree
+    void insert(int value) {
+        root = insertNode(root, value);
+    }
 
-    C[i + 1] = z;
+    // Method to search for a value in the tree
+    bool search(int value) {
+        return searchNode(root, value);
+    }
 
-    for (int j = n - 1; j >= i; j--)
-        keys[j + 1] = keys[j];
+    // Method to display the tree in sorted order
+    void display() {
+        inOrder(root);
+        cout << endl;
+    }
+};
 
-    keys[i] = y->keys[t - 1];
-    n++;
-}
-
-// Main function to demonstrate the B-Tree
+// Main function
 int main() {
-    int t;
-    cout << "Enter the minimum degree of the B-Tree: ";
-    cin >> t;
+    BinarySearchTree bst;
 
-    BTree tree(t);
-
-    int choice, key;
-    do {
-        cout << "\n1. Insert\n2. Traverse\n3. Search\n4. Exit\n";
-        cout << "Enter your choice: ";
+    cout << "Binary Search Tree Operations:\n";
+    while (true) {
+        cout << "\n1. Insert\n2. Search\n3. Display\n4. Exit\nEnter your choice: ";
+        int choice, value;
         cin >> choice;
 
         switch (choice) {
             case 1:
-                cout << "Enter key to insert: ";
-                cin >> key;
-                tree.insert(key);
+                cout << "Enter value to insert: ";
+                cin >> value;
+                bst.insert(value);
+                cout << "Value inserted.\n";
                 break;
             case 2:
-                cout << "B-Tree: ";
-                tree.traverse();
-                cout << endl;
+                cout << "Enter value to search: ";
+                cin >> value;
+                if (bst.search(value)) {
+                    cout << "Value found in the tree.\n";
+                } else {
+                    cout << "Value not found in the tree.\n";
+                }
                 break;
             case 3:
-                cout << "Enter key to search: ";
-                cin >> key;
-                if (tree.search(key) != nullptr)
-                    cout << "Key " << key << " found in the tree.\n";
-                else
-                    cout << "Key " << key << " not found in the tree.\n";
+                cout << "Tree elements in sorted order: ";
+                bst.display();
                 break;
             case 4:
-                cout << "Exiting.\n";
-                break;
+                cout << "Exiting program.\n";
+                return 0;
             default:
-                cout << "Invalid choice.\n";
+                cout << "Invalid choice. Please try again.\n";
         }
-    } while (choice != 4);
-
-    return 0;
+    }
 }
+
+// insertion -> best O(log N) and worst O(N)
+// search -> same to same 
+// inorder traveral -> O(N)
+// space comp -> samme 
+// preformance degrade to o of n when unbalanced
 
 //Suffix tree
 
 #include <iostream>
+#include <vector>
 #include <map>
 #include <string>
 
-class SuffixTreeNode {
-public:
-    std::map<char, SuffixTreeNode*> children; // Map to store child nodes
-    int start;  // Start index of the edge
-    int* end;   // End index of the edge (pointer for flexibility)
-
-    SuffixTreeNode(int start, int* end) : start(start), end(end) {}
-};
+using namespace std;
 
 class SuffixTree {
-private:
-    SuffixTreeNode* root; // Root of the suffix tree
-    std::string text;     // Input text
-    int textLength;       // Length of the text
-
-    // Helper function to print the suffix tree
-    void printTree(SuffixTreeNode* node, int level = 0) {
-        for (const auto& child : node->children) {
-            std::cout << std::string(level * 4, ' '); // Indentation
-            std::cout << "'" << text.substr(child.second->start, 
-                        *(child.second->end) - child.second->start + 1) << "'\n";
-            printTree(child.second, level + 1);
-        }
-    }
-
 public:
-    SuffixTree(const std::string& input) : text(input), textLength(input.length()) {
-        root = new SuffixTreeNode(-1, new int(-1)); // Root node
-        buildSuffixTree();
+    struct Node {
+        map<char, Node*> children;  // Children of the current node
+        int start, *end;            // Start index and end index for the substring
+        int suffixLink;             // Link to the deepest node with the same prefix
+        Node(int start, int* end) : start(start), end(end), suffixLink(-1) {}
+    };
+
+    SuffixTree(const string& text) : text(text) {
+        // Root of the tree
+        root = new Node(-1, nullptr);
+        build();
     }
 
-    ~SuffixTree() {
-        deleteTree(root);
-    }
-
-    // Function to delete the tree recursively
-    void deleteTree(SuffixTreeNode* node) {
-        for (auto& child : node->children) {
-            deleteTree(child.second);
-        }
-        delete node->end;
-        delete node;
-    }
-
-    // Function to build the suffix tree
-    void buildSuffixTree() {
-        for (int i = 0; i < textLength; ++i) {
-            extendSuffixTree(i);
+    void build() {
+        int n = text.size();
+        int* end = new int(0);
+        for (int i = 0; i < n; i++) {
+            *end = i;
+            extendSuffixTree(i, end);
         }
     }
 
-    // Extend the suffix tree for the ith suffix
-    void extendSuffixTree(int pos) {
-        SuffixTreeNode* currentNode = root;
-        for (int i = pos; i < textLength; ++i) {
-            char currentChar = text[i];
-            if (currentNode->children.find(currentChar) == currentNode->children.end()) {
-                // If the current character is not present, create a new node
-                currentNode->children[currentChar] = new SuffixTreeNode(i, new int(textLength - 1));
-            }
-            currentNode = currentNode->children[currentChar];
-        }
-    }
-
-    // Print the suffix tree
     void print() {
-        std::cout << "Suffix Tree Structure:\n";
-        printTree(root);
+        printTree(root, 0);
+    }
+
+private:
+    string text;  // Input string
+    Node* root;   // Root node of the suffix tree
+
+    void extendSuffixTree(int pos, int* end) {
+        // Here we would normally add the logic for extending the suffix tree.
+        // In this naive implementation, we are just adding the suffixes one by one.
+        cout << "Adding suffix: " << text.substr(pos) << endl;
+    }
+
+    void printTree(Node* node, int depth) {
+        for (auto& child : node->children) {
+            for (int i = 0; i < depth; i++) cout << "-";
+            cout << child.first << " -> " << text.substr(child.second->start, *child.second->end - child.second->start + 1) << endl;
+            printTree(child.second, depth + 1);
+        }
     }
 };
 
 int main() {
-    std::string input = "banana";
-    SuffixTree tree(input);
-    tree.print();
+    string text;
+    cout << "Enter a string: ";
+    cin >> text;
+
+    SuffixTree tree(text);
+    tree.print();  // Print the suffix tree (in a very simple way for now)
+
     return 0;
 }
-
